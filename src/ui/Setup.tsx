@@ -12,13 +12,13 @@ export function Setup() {
     <div className="view">
       <div>
         <div className="eyebrow">Setup</div>
-        <h1>Your crew & courses</h1>
+        <h1>Buddies & courses</h1>
       </div>
       {!storageOk ? (
         <div className="banner">This browser is not saving. Use Back up after each round, and skip private mode.</div>
       ) : null}
       <div className="block">
-        <h3>The crew</h3>
+        <h3>Buddies</h3>
         {state.players.map((p) => (
           <div className="row" key={p.id} style={{ flexWrap: "nowrap" }}>
             <input
