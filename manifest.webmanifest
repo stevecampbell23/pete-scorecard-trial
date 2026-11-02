@@ -1,11 +1,12 @@
 {
   "name": "Pete Scorecard (trial)",
   "short_name": "Pete Card",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#111111",
   "theme_color": "#111111",
   "icons": [
-    { "src": "/pete.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "./pete.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
