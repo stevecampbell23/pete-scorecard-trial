@@ -62,9 +62,13 @@ function asHit(c: Record<string, unknown>): OgHit | null {
   };
 }
 
-async function oneSearch(p: URLSearchParams, signal?: AbortSignal): Promise<OgHit[]> {
-  const j = (await getJson(`/courses/search?${p}`, signal)) as { courses?: Record<string, unknown>[] };
-  return (j.courses ?? []).map(asHit).filter((x): x is OgHit => Boolean(x));
+export type SearchPage = { hits: OgHit[]; total: number };
+
+async function oneSearch(p: URLSearchParams, signal?: AbortSignal): Promise<SearchPage> {
+  const j = (await getJson(`/courses/search?${p}`, signal)) as { courses?: Record<string, unknown>[]; total?: number };
+  const hits = (j.courses ?? []).map(asHit).filter((x): x is OgHit => Boolean(x));
+  const total = Number(j.total);
+  return { hits, total: Number.isFinite(total) && total > 0 ? total : hits.length };
 }
 
 function mergeHits(lists: OgHit[][]): OgHit[] {
@@ -86,15 +90,32 @@ function mergeHits(lists: OgHit[][]): OgHit[] {
   return [...byId.values()];
 }
 
+async function fillPages(base: URLSearchParams, signal?: AbortSignal, cap = 80): Promise<SearchPage> {
+  const first = await oneSearch(base, signal);
+  let hits = first.hits;
+  const total = first.total;
+  while (hits.length < total && hits.length < cap) {
+    const p = new URLSearchParams(base);
+    p.set("offset", String(hits.length));
+    const more = await oneSearch(p, signal);
+    if (!more.hits.length) break;
+    const before = hits.length;
+    hits = mergeHits([hits, more.hits]);
+    if (hits.length <= before) break;
+  }
+  return { hits, total };
+}
+
 export async function searchCourses(opts: {
   q?: string;
   lat?: number;
   lng?: number;
   limit?: number;
+  radiusMi?: number;
   signal?: AbortSignal;
-}): Promise<OgHit[]> {
-  const limit = String(opts.limit ?? 20);
-  const jobs: Promise<OgHit[]>[] = [];
+}): Promise<SearchPage> {
+  const limit = String(opts.limit ?? 50);
+  const jobs: Promise<SearchPage>[] = [];
   const q = opts.q?.trim().slice(0, 60);
   const geo = opts.lat != null && opts.lng != null;
   if (q) {
@@ -103,13 +124,15 @@ export async function searchCourses(opts: {
   }
   if (geo) {
     const p = new URLSearchParams({ lat: String(opts.lat), lng: String(opts.lng), limit });
-    jobs.push(oneSearch(p, opts.signal));
+    p.set("radius_mi", String(opts.radiusMi ?? 30));
+    jobs.push(fillPages(p, opts.signal, 80));
   }
-  if (!jobs.length) return [];
+  if (!jobs.length) return { hits: [], total: 0 };
   const settled = await Promise.allSettled(jobs);
-  const lists = settled.filter((s): s is PromiseFulfilledResult<OgHit[]> => s.status === "fulfilled").map((s) => s.value);
-  if (!lists.length) throw new Error("opengolf search failed");
-  return mergeHits(lists);
+  const pages = settled.filter((s): s is PromiseFulfilledResult<SearchPage> => s.status === "fulfilled").map((s) => s.value);
+  if (!pages.length) throw new Error("opengolf search failed");
+  const geoTotal = geo ? pages[pages.length - 1]?.total ?? 0 : 0;
+  return { hits: mergeHits(pages.map((p) => p.hits)), total: q ? mergeHits(pages.map((p) => p.hits)).length : geoTotal };
 }
 
 function parFromRows(rows: Record<string, unknown>[], holesHint?: number): Array<number | null> {
@@ -175,3 +198,12 @@ export async function courseDetail(id: string, signal?: AbortSignal): Promise<Og
 }
 
 export { mergeHits };
+
+export const PAGE_NEAR = 8;
+export const MORE_NEAR = 12;
+
+export function nextRadius(mi: number): number | null {
+  if (mi < 60) return 60;
+  if (mi < 120) return 120;
+  return null;
+}

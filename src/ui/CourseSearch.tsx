@@ -3,7 +3,7 @@ import type { Course, TeeSet } from "../types";
 import { useActions, useStore } from "../store";
 import { formatMiles, haversineMi, readGps } from "../engine/geo";
 import { completeness, matchesQuery, sortHits } from "../engine/courseMatch";
-import { courseDetail, searchCourses, type OgHit } from "../engine/opengolf";
+import { courseDetail, MORE_NEAR, nextRadius, PAGE_NEAR, searchCourses, type OgHit } from "../engine/opengolf";
 import { sum } from "../engine/id";
 
 type Hit = {
@@ -40,6 +40,9 @@ export function CourseSearch({
   const [geoBusy, setGeoBusy] = useState(false);
   const [geoErr, setGeoErr] = useState("");
   const [apiHits, setApiHits] = useState<OgHit[]>([]);
+  const [apiTotal, setApiTotal] = useState(0);
+  const [radiusMi, setRadiusMi] = useState(30);
+  const [shownNear, setShownNear] = useState(PAGE_NEAR);
   const [err, setErr] = useState("");
   const [draft, setDraft] = useState<null | {
     name: string;
@@ -80,6 +83,15 @@ export function CourseSearch({
   }, []);
 
   useEffect(() => {
+    setShownNear(PAGE_NEAR);
+    setRadiusMi(30);
+  }, [fix?.lat, fix?.lng]);
+
+  useEffect(() => {
+    setShownNear(PAGE_NEAR);
+  }, [q]);
+
+  useEffect(() => {
     window.clearTimeout(timer.current);
     const query = q.trim();
     if (query.length === 1) return;
@@ -90,14 +102,18 @@ export function CourseSearch({
       setBusy(true);
       setErr("");
       try {
-        const hits = await searchCourses({
+        const page = await searchCourses({
           q: query.length >= 2 ? query : undefined,
           lat: fix?.lat,
           lng: fix?.lng,
-          limit: 20,
+          limit: 50,
+          radiusMi,
           signal: ac.signal,
         });
-        if (!ac.signal.aborted) setApiHits(hits);
+        if (!ac.signal.aborted) {
+          setApiHits(page.hits);
+          setApiTotal(page.total);
+        }
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
         setErr("Course database didn't answer. You can still add it yourself.");
@@ -106,7 +122,7 @@ export function CourseSearch({
       }
     }, query.length >= 2 ? 180 : 40);
     return () => window.clearTimeout(timer.current);
-  }, [q, fix?.lat, fix?.lng]);
+  }, [q, fix?.lat, fix?.lng, radiusMi]);
 
   const playedIds = useMemo(() => new Set(state.rounds.map((r) => r.courseId)), [state.rounds]);
 
@@ -147,12 +163,18 @@ export function CourseSearch({
         knownPar: h.totalPar,
         holesHint: h.totalPar && h.totalPar <= 30 ? 9 : 18,
       }));
-    return sortHits([...bag, ...remote], q).slice(0, 24);
+    return sortHits([...bag, ...remote], q);
   }, [apiHits, state.courses, q, fix, playedIds]);
 
   const yours = hits.filter((h) => h.inBag);
-  const near = hits.filter((h) => !h.inBag && h.distanceMi != null && h.distanceMi <= 30);
-  const rest = hits.filter((h) => !h.inBag && !(h.distanceMi != null && h.distanceMi <= 30));
+  const nearAll = hits
+    .filter((h) => !h.inBag && h.distanceMi != null)
+    .sort((a, b) => (a.distanceMi ?? 999) - (b.distanceMi ?? 999));
+  const near = q.trim() ? nearAll.filter((h) => (h.distanceMi ?? 999) <= radiusMi) : nearAll;
+  const rest = hits.filter((h) => !h.inBag && !near.some((n) => n.key === h.key));
+  const shown = near.slice(0, shownNear);
+  const hidden = Math.max(0, near.length - shown.length);
+  const farther = nextRadius(radiusMi);
 
   async function pickHit(h: Hit) {
     if (h.bagId) {
@@ -328,8 +350,37 @@ export function CourseSearch({
         </div>
       ) : null}
       <HitList title="Your courses" hits={yours} onPick={pickHit} />
-      <HitList title="Near you" hits={near} onPick={pickHit} />
-      <HitList title={q.trim() ? "Matches" : "Farther away"} hits={rest} onPick={pickHit} />
+      <HitList
+        title={
+          !q.trim() && apiTotal > shown.length
+            ? `Near you · showing ${shown.length} of ${apiTotal}`
+            : "Near you"
+        }
+        hits={shown}
+        onPick={pickHit}
+      />
+      {near.length || apiTotal > shown.length ? (
+        <div className="row">
+          {hidden > 0 ? (
+            <button className="btn small ghost" type="button" onClick={() => setShownNear((n) => n + MORE_NEAR)}>
+              Show more nearby · {hidden} more
+            </button>
+          ) : farther && !q.trim() ? (
+            <button
+              className="btn small ghost"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setRadiusMi(farther);
+                setShownNear((n) => n + MORE_NEAR);
+              }}
+            >
+              Look farther · up to {farther} miles
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <HitList title={q.trim() ? "Matches" : rest.length ? "Farther away" : ""} hits={rest} onPick={pickHit} />
       {!hits.length && !busy ? (
         <span className="note">
           {q.trim().length >= 2

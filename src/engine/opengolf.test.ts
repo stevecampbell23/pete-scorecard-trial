@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeHits } from "./opengolf";
+import { mergeHits, nextRadius, PAGE_NEAR } from "./opengolf";
 
 describe("search merge", () => {
   it("keeps a named hit that is not nearby, and the nearby distance on a duplicate", () => {
@@ -12,5 +12,12 @@ describe("search merge", () => {
     expect(merged).toHaveLength(2);
     expect(merged.find((h) => h.id === "pebble")?.distanceMi).toBe(1900);
     expect(merged.find((h) => h.id === "occ")?.distanceMi).toBe(2.4);
+  });
+
+  it("widens the search ring twice, then stops", () => {
+    expect(PAGE_NEAR).toBe(8);
+    expect(nextRadius(30)).toBe(60);
+    expect(nextRadius(60)).toBe(120);
+    expect(nextRadius(120)).toBeNull();
   });
 });
