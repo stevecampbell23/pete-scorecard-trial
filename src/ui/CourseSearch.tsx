@@ -4,6 +4,7 @@ import { useActions, useStore } from "../store";
 import { formatMiles, haversineMi, readGps } from "../engine/geo";
 import { completeness, matchesQuery, sortHits } from "../engine/courseMatch";
 import { courseDetail, MORE_NEAR, nextRadius, PAGE_NEAR, searchCourses, type OgHit } from "../engine/opengolf";
+import { getDetail, loadNearby, saveDetail, saveNearby } from "../engine/courseCache";
 import { sum } from "../engine/id";
 
 type Hit = {
@@ -39,8 +40,10 @@ export function CourseSearch({
   const [busy, setBusy] = useState(false);
   const [geoBusy, setGeoBusy] = useState(false);
   const [geoErr, setGeoErr] = useState("");
-  const [apiHits, setApiHits] = useState<OgHit[]>([]);
-  const [apiTotal, setApiTotal] = useState(0);
+  const seeded = loadNearby();
+  const [apiHits, setApiHits] = useState<OgHit[]>(() => seeded?.hits ?? []);
+  const [apiTotal, setApiTotal] = useState(() => seeded?.total ?? 0);
+  const [fromCache, setFromCache] = useState(() => Boolean(seeded?.hits.length));
   const [radiusMi, setRadiusMi] = useState(30);
   const [shownNear, setShownNear] = useState(PAGE_NEAR);
   const [err, setErr] = useState("");
@@ -113,10 +116,25 @@ export function CourseSearch({
         if (!ac.signal.aborted) {
           setApiHits(page.hits);
           setApiTotal(page.total);
+          setFromCache(false);
+          if (!query && page.hits.length && fix) {
+            saveNearby({
+              hits: page.hits,
+              total: page.total,
+              radiusMi,
+              lat: fix.lat,
+              lng: fix.lng,
+              at: Date.now(),
+            });
+          }
         }
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
-        setErr("Course database didn't answer. You can still add it yourself.");
+        setErr(
+          loadNearby()?.hits.length
+            ? "Couldn’t refresh. Showing the last list saved on this phone."
+            : "Course database didn't answer. You can still add it yourself.",
+        );
       } finally {
         if (!ac.signal.aborted) setBusy(false);
       }
@@ -184,7 +202,8 @@ export function CourseSearch({
     if (!h.ogid) return;
     setBusy(true);
     try {
-      const d = await courseDetail(h.ogid);
+      const d = getDetail(h.ogid) ?? (await courseDetail(h.ogid));
+      saveDetail(d);
       const place = [d.city, d.state].filter(Boolean).join(", ");
       const par = d.par.length ? d.par : Array(9).fill(null);
       setDraft({
@@ -321,6 +340,7 @@ export function CourseSearch({
         <span className="note">
           Using your location
           {fix.accuracyM ? ` · about ${Math.round(fix.accuracyM)} m` : ""}. Closest first.
+          {fromCache ? " Last nearby list is ready while we refresh." : ""}
         </span>
       ) : (
         <span className="note">{geoErr || "Turn on location and we’ll list courses by the lot."}</span>

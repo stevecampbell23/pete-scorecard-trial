@@ -168,7 +168,7 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
   const [courseId, setCourseId] = useState(state.courses[0]?.id ?? "");
   const [pid, setPid] = useState(state.me);
   const course = courseById(state, courseId);
-  const [vals, setVals] = useState<number[]>(() => course.par.map((p) => p));
+  const [vals, setVals] = useState<Array<number | null>>(() => course.par.map(() => null));
 
   return (
     <div className="view">
@@ -185,7 +185,7 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
           onSelect={(id) => {
             setCourseId(id);
             const c = courseById(state, id);
-            setVals(c.par.map((p) => p));
+            setVals(c.par.map(() => null));
           }}
         />
         <label className="field">
@@ -207,10 +207,11 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
                 type="number"
                 min={1}
                 max={15}
-                value={vals[i] ?? p}
+                value={vals[i] ?? ""}
                 onChange={(e) => {
                   const next = [...vals];
-                  next[i] = Number(e.target.value);
+                  const n = Number(e.target.value);
+                  next[i] = Number.isInteger(n) && n >= 1 ? n : null;
                   setVals(next);
                 }}
                 style={{ padding: "8px 2px", textAlign: "center", minHeight: 42 }}
@@ -219,19 +220,23 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
           ))}
         </div>
         {course.par.length ? (
+        <>
+        <span className="note">Type every hole. Blank holes will not be filled in as par.</span>
         <button
           className="btn solid"
           type="button"
+          disabled={vals.some((v) => v == null) || vals.length !== course.par.length}
           onClick={() => {
             const id = actions.enterFinishedRound({
               courseId,
-              scores: { [pid]: vals.map((v, i) => v || course.par[i]) },
+              scores: { [pid]: vals.map((v) => v as number) },
             });
             onSaved(id);
           }}
         >
           Save round
         </button>
+        </>
         ) : (
           <span className="note">Pick a course first.</span>
         )}

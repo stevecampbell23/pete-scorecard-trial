@@ -112,6 +112,7 @@ export function Setup() {
         <span className="note">
           {state.rounds.length} rounds · {state.players.length} players · {state.courses.length} courses
         </span>
+        <span className="note">On iPhone: Share → Add to Home Screen. A live round keeps the screen awake.</span>
       </div>
     </div>
   );

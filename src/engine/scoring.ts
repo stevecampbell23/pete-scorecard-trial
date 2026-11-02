@@ -37,14 +37,22 @@ export function thruLine(scores: Array<number | null>, par: number[]): { holes: 
   return { holes, strokes, vs };
 }
 
-export function bumpScore(current: number | null, par: number, delta: number): number {
-  const base = current ?? par;
+/** Real card par only. Never invent a 4. */
+export function holePar(n: number | null | undefined): number | null {
+  return Number.isInteger(n) && (n as number) >= 3 && (n as number) <= 6 ? (n as number) : null;
+}
+
+export function bumpScore(current: number | null, par: number | null | undefined, delta: number): number {
+  const hint = holePar(par);
+  const base = current ?? hint;
+  if (base == null) return clampScore(delta >= 0 ? 1 : 1);
   return clampScore(base + delta);
 }
 
-/** Next hole: if nothing was entered, lock par. Jumping holes does not call this. */
-export function commitIfEmpty(current: number | null, par: number): number {
-  return current ?? par;
+/** Next hole: if nothing was entered, lock the real par. Jumping holes does not call this. */
+export function commitIfEmpty(current: number | null, par: number | null | undefined): number | null {
+  if (current != null) return current;
+  return holePar(par);
 }
 
 export function allHolesRecorded(live: LiveRound): boolean {
@@ -54,7 +62,11 @@ export function allHolesRecorded(live: LiveRound): boolean {
 export function toSavedScores(live: LiveRound, par: number[]): Record<string, number[]> {
   const out: Record<string, number[]> = {};
   for (const pid of live.playerIds) {
-    out[pid] = (live.scores[pid] ?? []).map((s, i) => commitIfEmpty(s, par[i] ?? 4));
+    out[pid] = (live.scores[pid] ?? []).map((s, i) => {
+      const next = commitIfEmpty(s, par[i]);
+      if (next == null) throw new Error("Cannot save a hole with no score and no par.");
+      return next;
+    });
   }
   return out;
 }
@@ -62,7 +74,7 @@ export function toSavedScores(live: LiveRound, par: number[]): Record<string, nu
 export function mixFor(scores: number[], par: number[]) {
   const m = { birdie: 0, par: 0, bogey: 0, double: 0, triple: 0, snow: 0 };
   scores.forEach((s, i) => {
-    const k = holeKind(s, par[i] ?? 4);
+    const k = holeKind(s, holePar(par[i]) ?? s);
     if (k === "eagle" || k === "birdie") m.birdie += 1;
     else if (k === "par") m.par += 1;
     else if (k === "bogey") m.bogey += 1;
@@ -83,7 +95,10 @@ export function roundTotal(scores: number[]): number {
 
 export function verdict(scores: number[], par: number[], isBest: boolean): string {
   const snowHoles = scores.map((s, i) => (s >= SNOWMAN ? i + 1 : 0)).filter(Boolean);
-  const birdies = scores.filter((s, i) => s < (par[i] ?? 4)).length;
+  const birdies = scores.filter((s, i) => {
+    const p = holePar(par[i]);
+    return p != null && s < p;
+  }).length;
   if (isBest && !snowHoles.length) return "New personal best. Frame it.";
   if (isBest) return "Personal best. Snowman and all.";
   if (snowHoles.length > 1) return `Snowmen on ${snowHoles.join(" & ")}. Pete saw that.`;

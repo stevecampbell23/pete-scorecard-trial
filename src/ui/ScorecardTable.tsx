@@ -1,4 +1,4 @@
-import { holeKind } from "../engine/scoring";
+import { holeKind, holePar } from "../engine/scoring";
 import { sum } from "../engine/id";
 import type { Course } from "../types";
 import { playerById, useStore } from "../store";
@@ -42,7 +42,7 @@ export function ScorecardTable({ course, scores }: { course: Course; scores: Rec
                     {s.slice(a, b).map((v, i) => (
                       <td key={i}>
                         {v ? (
-                          <span className={`mk ${holeKind(v, course.par[a + i] ?? 4)}`}>{v}</span>
+                          <span className={`mk ${holeKind(v, holePar(course.par[a + i]) ?? v)}`}>{v}</span>
                         ) : (
                           <span className="muted">·</span>
                         )}

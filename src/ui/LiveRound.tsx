@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { courseById, playerById, useActions, useStore } from "../store";
-import { holeKind, thruLine } from "../engine/scoring";
+import { holeKind, holePar, thruLine } from "../engine/scoring";
 import { vsPar } from "../engine/id";
 import { useWakeLock } from "./useWakeLock";
 import { ScorecardTable } from "./ScorecardTable";
@@ -12,10 +12,9 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
   const course = courseById(state, live.courseId);
   const n = course.par.length;
   const h = live.hole;
-  const par = course.par[h] ?? 4;
-  const [stayOn] = useState(true);
+  const par = holePar(course.par[h]);
   const [quitArm, setQuitArm] = useState(false);
-  useWakeLock(stayOn);
+  useWakeLock(true);
 
   const hasAny = live.playerIds.some((pid) => live.scores[pid].some((s) => s != null));
 
@@ -39,7 +38,7 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
           <div className="hole-no">{h + 1}</div>
         </div>
         <div style={{ textAlign: "right" }}>
-          <div className="par-big">Par {par}</div>
+          <div className="par-big">{par != null ? `Par ${par}` : "Par ?"}</div>
           <div className="muted">Hole {h + 1} of {n}</div>
         </div>
       </div>
@@ -68,7 +67,7 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
           const shown = s ?? par;
           const dim = s == null;
           const thru = thruLine(live.scores[pid], course.par);
-          const kind = s != null ? holeKind(s, par) : null;
+          const kind = s != null && par != null ? holeKind(s, par) : null;
           return (
             <div className="pl" key={pid}>
               <div>
@@ -87,7 +86,7 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
                 <button type="button" aria-label="Minus" onClick={() => actions.bump(pid, -1)}>
                   −
                 </button>
-                <div className={`v num${dim ? " dim" : ""}`}>{shown}</div>
+                <div className={`v num${dim ? " dim" : ""}`}>{shown ?? "—"}</div>
                 <button type="button" aria-label="Plus" onClick={() => actions.bump(pid, 1)}>
                   +
                 </button>

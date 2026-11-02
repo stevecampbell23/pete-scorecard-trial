@@ -168,16 +168,32 @@ export function RoundCard({ round, pid, course }: { round: SavedRound; pid: stri
     g.textAlign = "left";
   }, [round, pid, course, player, state.rounds, state.courses, state.players]);
 
-  function save() {
+  const fileName = `pete-scorecard-${round.date}-${player}.png`.replace(/[^\w.-]+/g, "-").toLowerCase();
+
+  function save(blob: Blob) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  }
+
+  async function shareOrSave() {
     const cv = canvasRef.current;
     if (!cv) return;
-    cv.toBlob((b) => {
-      if (!b) return;
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = `pete-scorecard-${round.date}-${player}.png`.replace(/[^\w.-]+/g, "-").toLowerCase();
-      a.click();
-    }, "image/png");
+    const blob = await new Promise<Blob | null>((resolve) => cv.toBlob(resolve, "image/png"));
+    if (!blob) return;
+    const file = new File([blob], fileName, { type: "image/png" });
+    const payload = { files: [file], title: "Pete Scorecard", text: `${player} at ${course.name}` };
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare(payload))) {
+        await navigator.share(payload);
+        return;
+      }
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
+    }
+    save(blob);
   }
 
   return (
@@ -185,9 +201,24 @@ export function RoundCard({ round, pid, course }: { round: SavedRound; pid: stri
       <img src={pete} alt="" className="pete" hidden />
       <span className="eyebrow">Round card</span>
       <canvas ref={canvasRef} width={1080} height={1350} className="cardimg" role="img" aria-label="Round card image" />
-      <button className="btn solid" type="button" onClick={save}>
-        Save image
-      </button>
+      <div className="row">
+        <button className="btn solid" type="button" onClick={() => void shareOrSave()}>
+          Share card
+        </button>
+        <button
+          className="btn ghost"
+          type="button"
+          onClick={() => {
+            const cv = canvasRef.current;
+            if (!cv) return;
+            cv.toBlob((b) => {
+              if (b) save(b);
+            }, "image/png");
+          }}
+        >
+          Save image
+        </button>
+      </div>
     </div>
   );
 }

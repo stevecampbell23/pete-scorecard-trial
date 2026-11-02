@@ -128,7 +128,11 @@ export function combine(parts: Ledger[]): Ledger {
   return ledger;
 }
 
-export function settlementSummary(ledger: Ledger, names: Record<string, string>): { headline: string; lines: string[] } {
+export function settlementSummary(
+  ledger: Ledger,
+  names: Record<string, string>,
+  mode: "points" | "dollars" = "points",
+): { headline: string; lines: string[] } {
   const entries = Object.entries(ledger).sort((a, b) => b[1] - a[1]);
   if (!entries.length || entries.every(([, v]) => Math.abs(v) < 0.01)) {
     return { headline: "All square", lines: ["Nobody owes anybody."] };
@@ -141,7 +145,7 @@ export function settlementSummary(ledger: Ledger, names: Record<string, string>)
       : "Settle up";
   return {
     headline,
-    lines: entries.map(([id, v]) => `${names[id]}: ${v > 0 ? "+" : ""}${formatAmt(v)}`),
+    lines: entries.map(([id, v]) => `${names[id]}: ${v > 0 ? "+" : ""}${formatAmt(v, mode)}`),
   };
 }
 

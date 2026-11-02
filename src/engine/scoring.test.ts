@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bumpScore, commitIfEmpty, holeKind, thruLine } from "./scoring";
+import { bumpScore, commitIfEmpty, holeKind, holePar, thruLine, toSavedScores } from "./scoring";
 import { seasonTitle } from "./id";
 import { skins, nassau, snowmanPays, strokePlay } from "./games";
 import { typicalCarry, effectiveYards, pickClub } from "./yardage";
@@ -15,6 +15,26 @@ describe("scoring", () => {
   it("only commits par when Next is pressed", () => {
     expect(commitIfEmpty(null, 4)).toBe(4);
     expect(commitIfEmpty(6, 4)).toBe(6);
+  });
+
+  it("never invents a par 4", () => {
+    expect(holePar(undefined)).toBeNull();
+    expect(holePar(4)).toBe(4);
+    expect(commitIfEmpty(null, undefined)).toBeNull();
+    expect(() =>
+      toSavedScores(
+        {
+          id: "r",
+          date: "2026-11-02",
+          courseId: "c",
+          playerIds: ["a"],
+          hole: 0,
+          scores: { a: [null] },
+          created: 1,
+        },
+        [],
+      ),
+    ).toThrow();
   });
 
   it("first tap from empty starts at par then moves", () => {

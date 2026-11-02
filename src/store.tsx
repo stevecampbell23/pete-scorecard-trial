@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNod
 import { backupPayload, loadState, saveState } from "./storage";
 import type { AppState, Club, Course, LiveRound, Player, SavedRound } from "./types";
 import { uid, todayISO } from "./engine/id";
-import { bumpScore, commitIfEmpty, toSavedScores } from "./engine/scoring";
+import { bumpScore, commitIfEmpty, holePar, toSavedScores } from "./engine/scoring";
 
 type Store = {
   state: AppState;
@@ -133,7 +133,7 @@ export function useActions() {
       set((s) => {
         if (!s.live) return s;
         const course = s.courses.find((c) => c.id === s.live!.courseId);
-        const par = course?.par[s.live.hole] ?? 4;
+        const par = holePar(course?.par[s.live.hole]);
         const nextScores = { ...s.live.scores, [pid]: [...s.live.scores[pid]] };
         nextScores[pid][s.live.hole] = bumpScore(nextScores[pid][s.live.hole], par, delta);
         return { ...s, live: { ...s.live, scores: nextScores } };
@@ -148,7 +148,8 @@ export function useActions() {
           scores = { ...scores };
           for (const pid of s.live.playerIds) {
             const row = [...scores[pid]];
-            row[s.live.hole] = commitIfEmpty(row[s.live.hole], course?.par[s.live.hole] ?? 4);
+            const next = commitIfEmpty(row[s.live.hole], course?.par[s.live.hole]);
+            if (next != null) row[s.live.hole] = next;
             scores[pid] = row;
           }
         }
@@ -160,11 +161,17 @@ export function useActions() {
         if (!s.live) return s;
         const course = s.courses.find((c) => c.id === s.live!.courseId);
         const par = course?.par ?? [];
+        let scores: Record<string, number[]>;
+        try {
+          scores = toSavedScores(s.live, par);
+        } catch {
+          return s;
+        }
         const round: SavedRound = {
           id: s.live.id,
           date: s.live.date,
           courseId: s.live.courseId,
-          scores: toSavedScores(s.live, par),
+          scores,
           created: s.live.created,
         };
         return { ...s, live: null, rounds: [...s.rounds, round] };

@@ -32,14 +32,14 @@ export function SettleUp({ round, onBack }: { round: SavedRound; onBack: () => v
     return combine(parts);
   }, [g, ids, round.scores]);
 
-  const summary = settlementSummary(ledger, names);
+  const summary = settlementSummary(ledger, names, g.mode);
   const unit = g.mode === "dollars" ? "dollars" : "points";
 
   function copy() {
     const text = [
       `Settle up · ${course.name}`,
       summary.headline,
-      ...ids.map((id) => `${names[id]} ${formatAmt(ledger[id], g.mode)}`),
+      ...summary.lines,
       "Bragging rights only. No money moved.",
     ].join("\n");
     void navigator.clipboard?.writeText(text);
@@ -91,6 +91,13 @@ export function SettleUp({ round, onBack }: { round: SavedRound; onBack: () => v
       <div className="block">
         <div className="eyebrow">Settle up</div>
         <h2>{summary.headline}</h2>
+        {summary.lines.length ? (
+          <ul className="note" style={{ margin: 0, paddingLeft: 18 }}>
+            {summary.lines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
         {ids.map((id) => (
           <div className="row" key={id} style={{ justifyContent: "space-between" }}>
             <strong>{names[id]}</strong>
@@ -99,7 +106,7 @@ export function SettleUp({ round, onBack }: { round: SavedRound; onBack: () => v
             </span>
           </div>
         ))}
-        <p className="note">Playing for {unit}. Bragging rights only.</p>
+        <p className="note">Playing for {unit}. Bragging rights only. Nobody’s card is charged.</p>
         <button className="btn ghost" type="button" onClick={copy}>
           Copy text
         </button>
