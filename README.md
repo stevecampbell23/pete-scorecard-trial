@@ -2,7 +2,9 @@
 
 A side build of Punk Head Pete’s group golf scorecard. It is **not** the live app at [scores.punkheadpete.com](https://scores.punkheadpete.com) and does not share data with it.
 
-This repo exists so we can compare a rewrite (scoring engine split from UI, honest live scoring, “Your 2026”, settle-up math with tests) against Claude’s production app without touching that code.
+Hosted trial: [https://stevecampbell23.github.io/pete-scorecard-trial/](https://stevecampbell23.github.io/pete-scorecard-trial/)
+
+This GitHub repo is **`stevecampbell23/pete-scorecard-trial`**. It is not `stevecampbell23/pete-scorecard` (the live scores.punkheadpete.com app). Do not merge or deploy this onto that repo.
 
 ## Run
 
