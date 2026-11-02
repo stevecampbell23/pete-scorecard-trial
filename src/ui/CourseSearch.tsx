@@ -133,7 +133,6 @@ export function CourseSearch({
       });
     const remote: Hit[] = apiHits
       .filter((h) => !state.courses.some((c) => c.ogid === h.id))
-      .filter((h) => !q.trim() || matchesQuery(q, h.name, `${h.city ?? ""} ${h.state ?? ""}`))
       .map((h) => ({
         key: `og-${h.id}`,
         name: h.name,
