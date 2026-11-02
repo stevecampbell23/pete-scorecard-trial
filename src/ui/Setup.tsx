@@ -1,24 +1,12 @@
 import { useState } from "react";
 import { useActions, useStore } from "../store";
 import { sum } from "../engine/id";
+import { CourseSearch } from "./CourseSearch";
 
 export function Setup() {
   const { state, storageOk } = useStore();
   const actions = useActions();
-  const [form, setForm] = useState(false);
-  const [holes, setHoles] = useState(9);
-  const [name, setName] = useState("");
-  const [city, setCity] = useState("");
-  const [pars, setPars] = useState<number[]>(Array(9).fill(4));
-  const [rating, setRating] = useState("");
-  const [slope, setSlope] = useState("");
   const [pending, setPending] = useState<string | null>(null);
-
-  function openForm(n: number) {
-    setHoles(n);
-    setPars(Array(n).fill(4));
-    setForm(true);
-  }
 
   return (
     <div className="view">
@@ -71,6 +59,7 @@ export function Setup() {
       </div>
       <div className="block">
         <h3>Courses</h3>
+        <CourseSearch selectedId={state.lastCourseId} onSelect={() => {}} />
         {state.courses.map((c) => (
           <div className="row" key={c.id} style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
             <span>
@@ -79,6 +68,7 @@ export function Setup() {
               <span className="note">
                 {c.par.length} holes · par {sum(c.par)}
                 {c.city ? ` · ${c.city}` : ""}
+                {c.teeName ? ` · ${c.teeName}` : ""}
               </span>
             </span>
             <button
@@ -93,81 +83,6 @@ export function Setup() {
             </button>
           </div>
         ))}
-        {form ? (
-          <div style={{ display: "grid", gap: 12, borderTop: "1px solid var(--line)", paddingTop: 14 }}>
-            <label className="field">
-              <span>Course name</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
-            </label>
-            <label className="field">
-              <span>Town (optional)</span>
-              <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={40} />
-            </label>
-            <div className="chips">
-              {[9, 18].map((n) => (
-                <button key={n} className="chip" type="button" aria-pressed={holes === n} onClick={() => openForm(n)}>
-                  {n} holes
-                </button>
-              ))}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(9, minmax(0,1fr))", gap: 6 }}>
-              {pars.map((p, i) => (
-                <label key={i} style={{ display: "grid", gap: 2, textAlign: "center", fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>
-                  {i + 1}
-                  <input
-                    type="number"
-                    min={3}
-                    max={6}
-                    value={p}
-                    onChange={(e) => {
-                      const next = [...pars];
-                      next[i] = Number(e.target.value);
-                      setPars(next);
-                    }}
-                    style={{ padding: "8px 2px", textAlign: "center", minHeight: 42 }}
-                  />
-                </label>
-              ))}
-            </div>
-            <div className="row">
-              <label className="field" style={{ flex: 1 }}>
-                <span>Rating (optional)</span>
-                <input value={rating} onChange={(e) => setRating(e.target.value)} />
-              </label>
-              <label className="field" style={{ flex: 1 }}>
-                <span>Slope (optional)</span>
-                <input value={slope} onChange={(e) => setSlope(e.target.value)} />
-              </label>
-            </div>
-            <div className="row">
-              <button
-                className="btn solid small"
-                type="button"
-                onClick={() => {
-                  if (!name.trim()) return;
-                  actions.addCourse({
-                    name: name.trim(),
-                    city: city.trim() || undefined,
-                    par: pars,
-                    rating: rating ? Number(rating) : undefined,
-                    slope: slope ? Number(slope) : undefined,
-                  });
-                  setForm(false);
-                  setName("");
-                }}
-              >
-                Save course
-              </button>
-              <button className="btn small ghost" type="button" onClick={() => setForm(false)}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button className="btn small" type="button" onClick={() => openForm(9)}>
-            Add a course
-          </button>
-        )}
       </div>
       <div className="block">
         <h3>Back up your rounds</h3>

@@ -4,26 +4,11 @@ import type { AppState, Club } from "./types";
 
 export const STORAGE_KEY = "peteScorecard.trial.v1";
 
-export const PRESET_COURSES = [
-  {
-    id: "ben-hawes-par-3",
-    name: "Ben Hawes Par 3",
-    city: "Owensboro, KY",
-    par: [3, 3, 3, 3, 3, 3, 3, 3, 3],
-  },
-  {
-    id: "paul-walker",
-    name: "Paul Walker",
-    city: "Bowling Green, KY",
-    par: [4, 5, 3, 4, 4, 5, 4, 3, 4],
-  },
-];
-
 export function blankState(): AppState {
   const me = uid();
   return {
     players: [{ id: me, name: "You" }],
-    courses: PRESET_COURSES.map((c) => ({ ...c, par: [...c.par] })),
+    courses: [],
     rounds: [],
     live: null,
     me,

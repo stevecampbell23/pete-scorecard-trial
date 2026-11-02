@@ -5,6 +5,7 @@ import { handicapEstimate, playedRounds, snowStreak } from "../engine/handicap";
 import { LiveRoundView } from "./LiveRound";
 import { Yardage } from "./Yardage";
 import { FinishedRound } from "./FinishedRound";
+import { CourseSearch } from "./CourseSearch";
 
 export function Play({ onOpenRound }: { onOpenRound: (id: string) => void }) {
   const { state } = useStore();
@@ -48,18 +49,10 @@ function TeeItUp({ onOpenRound }: { onOpenRound: (id: string) => void }) {
         <div className="eyebrow">New round</div>
         <h1>Tee it up</h1>
       </div>
-      {state.courses.length ? (
-        <div className="block">
-          <label className="field">
-            <span>Course</span>
-            <select value={courseId} onChange={(e) => setCourseId(e.target.value)}>
-              {state.courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} · {c.par.length} holes · par {c.par.reduce((a, b) => a + b, 0)}
-                </option>
-              ))}
-            </select>
-          </label>
+      <div className="block">
+        <CourseSearch selectedId={courseId} onSelect={setCourseId} />
+        {courseId ? (
+          <>
           <div className="field">
             <span>Who’s playing</span>
             <div className="chips">
@@ -132,12 +125,11 @@ function TeeItUp({ onOpenRound }: { onOpenRound: (id: string) => void }) {
             Enter a finished round
           </button>
           <span className="note">Kept a paper card? Type the scores at once. Par is a hint until you tap Next hole.</span>
-        </div>
-      ) : (
-        <div className="block">
-          <span className="note">Add a course in Setup first.</span>
-        </div>
-      )}
+          </>
+        ) : (
+          <span className="note">Pick a course above, then choose who’s playing.</span>
+        )}
+      </div>
       <button className="block" type="button" onClick={() => setYardage(true)} style={{ textAlign: "left" }}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <strong>Pete’s yardage card</strong>
@@ -188,23 +180,14 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
         <h1>Type the scores</h1>
       </div>
       <div className="block">
-        <label className="field">
-          <span>Course</span>
-          <select
-            value={courseId}
-            onChange={(e) => {
-              setCourseId(e.target.value);
-              const c = courseById(state, e.target.value);
-              setVals(c.par.map((p) => p));
-            }}
-          >
-            {state.courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <CourseSearch
+          selectedId={courseId}
+          onSelect={(id) => {
+            setCourseId(id);
+            const c = courseById(state, id);
+            setVals(c.par.map((p) => p));
+          }}
+        />
         <label className="field">
           <span>Player</span>
           <select value={pid} onChange={(e) => setPid(e.target.value)}>
@@ -235,6 +218,7 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
             </label>
           ))}
         </div>
+        {course.par.length ? (
         <button
           className="btn solid"
           type="button"
@@ -248,6 +232,9 @@ function EnterPaper({ onBack, onSaved }: { onBack: () => void; onSaved: (id: str
         >
           Save round
         </button>
+        ) : (
+          <span className="note">Pick a course first.</span>
+        )}
       </div>
     </div>
   );

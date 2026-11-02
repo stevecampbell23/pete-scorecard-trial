@@ -5,6 +5,16 @@ export type Player = {
   name: string;
 };
 
+export type TeeSet = {
+  key: string;
+  name: string;
+  gender?: string;
+  rating?: number;
+  slope?: number;
+  yardage?: number;
+  par?: number;
+};
+
 export type Course = {
   id: string;
   name: string;
@@ -14,6 +24,11 @@ export type Course = {
   slope?: number;
   /** Stroke index 1 = hardest. Optional, used for net games later. */
   strokeIndex?: number[];
+  lat?: number;
+  lng?: number;
+  ogid?: string;
+  teeName?: string;
+  source?: "bag" | "opengolf" | "typed";
 };
 
 export type LiveRound = {
@@ -49,6 +64,7 @@ export type AppState = {
   me: string;
   lastCourseId?: string;
   clubs: Club[];
+  lastFix?: { lat: number; lng: number; at: number; accuracyM?: number };
 };
 
 export type Tab = "play" | "stats" | "rounds" | "setup";

@@ -84,8 +84,19 @@ export function useActions() {
     setMe(id: string) {
       set({ me: id });
     },
-    addCourse(course: Omit<Course, "id">) {
-      set((s) => ({ ...s, courses: [...s.courses, { ...course, id: uid() }] }));
+    addCourse(course: Omit<Course, "id"> & { id?: string }) {
+      const existing = course.ogid ? snapshot.state.courses.find((c) => c.ogid === course.ogid) : undefined;
+      const id = existing?.id ?? course.id ?? uid();
+      const next: Course = { ...existing, ...course, id };
+      set((s) => ({
+        ...s,
+        courses: existing ? s.courses.map((c) => (c.id === id ? next : c)) : [...s.courses, next],
+        lastCourseId: id,
+      }));
+      return next;
+    },
+    setFix(fix: AppState["lastFix"]) {
+      set({ lastFix: fix });
     },
     removeCourse(id: string) {
       set((s) => {
@@ -95,7 +106,7 @@ export function useActions() {
     },
     startRound(opts: { date?: string; courseId: string; playerIds: string[] }) {
       const course = state.courses.find((c) => c.id === opts.courseId);
-      if (!course || !opts.playerIds.length) return;
+      if (!course || !opts.playerIds.length || !course.par.length) return;
       const live: LiveRound = {
         id: uid(),
         date: opts.date || todayISO(),
@@ -176,6 +187,7 @@ export function useActions() {
         rounds: data.rounds ?? s.rounds,
         me: data.me ?? s.me,
         clubs: data.clubs ?? s.clubs,
+        lastCourseId: data.lastCourseId ?? s.lastCourseId,
         live: null,
       }));
     },

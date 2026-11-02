@@ -121,7 +121,7 @@ h3 { font-size: 15px; letter-spacing: 0.12em; }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .field { display: grid; gap: 6px; min-width: 0; }
 .field > span { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-input[type=text], input[type=date], input[type=number], select {
+input[type=text], input[type=date], input[type=number], input[type=search], select {
   background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px;
   padding: 10px 12px; min-height: 46px; width: 100%;
 }
@@ -134,6 +134,30 @@ input[type=text], input[type=date], input[type=number], select {
   font-weight: 600; min-height: 40px;
 }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.cres {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+  padding: 12px 12px 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+}
+.cres.selected { border-color: var(--green); }
+.pill {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 10px;
+}
 
 .hero {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
