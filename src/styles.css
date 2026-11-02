@@ -84,11 +84,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
 }
-.tabs .in { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.tabs .in { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
 .tabs button {
   padding: 12px 4px 14px;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);

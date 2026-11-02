@@ -5,6 +5,7 @@ import { Play } from "./ui/Play";
 import { Stats } from "./ui/Stats";
 import { Rounds } from "./ui/Rounds";
 import { Setup } from "./ui/Setup";
+import { Yardage } from "./ui/Yardage";
 
 export function App() {
   const { state, storageOk } = useStore();
@@ -46,13 +47,14 @@ export function App() {
             }}
           />
         ) : null}
+        {tab === "bag" ? <Yardage onBack={() => go("play")} /> : null}
         {tab === "stats" ? <Stats /> : null}
         {tab === "rounds" ? <Rounds openId={openRound} onOpen={setOpenRound} /> : null}
         {tab === "setup" ? <Setup /> : null}
       </main>
       <nav className="tabs" aria-label="Sections">
         <div className="in">
-          {(["play", "stats", "rounds", "setup"] as Tab[]).map((t) => (
+          {(["play", "bag", "stats", "rounds", "setup"] as Tab[]).map((t) => (
             <button key={t} type="button" data-tab={t} aria-current={tab === t ? "page" : undefined} onClick={() => go(t)}>
               {t}
             </button>

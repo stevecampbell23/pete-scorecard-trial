@@ -10,7 +10,7 @@ export function Yardage({ onBack }: { onBack: () => void }) {
   const [pin, setPin] = useState(150);
   const [conds, setConds] = useState<Condition[]>([]);
   const [checkClub, setCheckClub] = useState(state.clubs[6]?.id ?? state.clubs[0]?.id);
-  const [shots, setShots] = useState<number[]>([]);
+  const shots = state.clubShots?.[checkClub] ?? [];
   const [shot, setShot] = useState("");
 
   const effective = effectiveYards(pin, conds);
@@ -122,7 +122,7 @@ export function Yardage({ onBack }: { onBack: () => void }) {
             type="button"
             onClick={() => {
               const n = Number(shot);
-              if (n > 0) setShots([...shots, n]);
+              if (n > 0) actions.setClubShots(checkClub, [...shots, n]);
               setShot("");
             }}
           >
@@ -131,7 +131,7 @@ export function Yardage({ onBack }: { onBack: () => void }) {
         </div>
         <div className="chips">
           {shots.map((s, i) => (
-            <button key={i} className="chip" type="button" onClick={() => setShots(shots.filter((_, j) => j !== i))}>
+            <button key={i} className="chip" type="button" onClick={() => actions.setClubShots(checkClub, shots.filter((_, j) => j !== i))}>
               {s} ×
             </button>
           ))}
@@ -140,8 +140,8 @@ export function Yardage({ onBack }: { onBack: () => void }) {
           <div>
             <div className="big">{typical.yards} yds</div>
             <p className="note">
-              From {typical.used.length} shots
-              {typical.tossed.length ? ` · tossed ${typical.tossed.join(", ")}` : ""}.
+              Card says {state.clubs.find((c) => c.id === checkClub)?.yards ?? "—"} · shots say {typical.yards}. From {typical.used.length} carries
+              {typical.tossed.length ? ` · tossed ${typical.tossed.join(", ")}` : ""}. This stays on this phone.
             </p>
             <button
               className="btn solid"

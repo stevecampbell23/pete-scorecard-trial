@@ -25,7 +25,9 @@ export function loadState(): { state: AppState; storageOk: boolean } {
     parsed.courses ??= [];
     parsed.rounds ??= [];
     parsed.clubs ??= blankState().clubs;
+    parsed.clubShots ??= {};
     parsed.live ??= null;
+    parsed.room ??= null;
     return { state: parsed, storageOk: true };
   } catch {
     return { state: blankState(), storageOk: false };
@@ -52,6 +54,7 @@ export function backupPayload(state: AppState) {
       rounds: state.rounds,
       me: state.me,
       clubs: state.clubs,
+      clubShots: state.clubShots ?? {},
     },
   };
 }

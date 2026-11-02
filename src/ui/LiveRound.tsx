@@ -4,6 +4,8 @@ import { holeKind, holePar, thruLine } from "../engine/scoring";
 import { vsPar } from "../engine/id";
 import { useWakeLock } from "./useWakeLock";
 import { ScorecardTable } from "./ScorecardTable";
+import { Yardage } from "./Yardage";
+import { useGroup } from "../sync/GroupSync";
 
 export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) => void }) {
   const { state } = useStore();
@@ -14,7 +16,11 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
   const h = live.hole;
   const par = holePar(course.par[h]);
   const [quitArm, setQuitArm] = useState(false);
+  const [yardage, setYardage] = useState(false);
+  const group = useGroup();
   useWakeLock(true);
+
+  if (yardage) return <Yardage onBack={() => setYardage(false)} />;
 
   const hasAny = live.playerIds.some((pid) => live.scores[pid].some((s) => s != null));
 
@@ -42,6 +48,9 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
           <div className="muted">Hole {h + 1} of {n}</div>
         </div>
       </div>
+      {state.live && state.room ? (
+        <span className="note">Group {state.room.code}{group.peers ? ` · ${group.peers} other phone${group.peers === 1 ? "" : "s"}` : ""}</span>
+      ) : null}
       <div className="dots">
         {course.par.map((_, i) => {
           const filled = live.playerIds.every((p) => live.scores[p][i] != null);
@@ -95,6 +104,9 @@ export function LiveRoundView({ onFinished }: { onFinished: (roundId: string) =>
           );
         })}
       </div>
+      <button className="btn ghost" type="button" onClick={() => setYardage(true)}>
+        Ask Pete for a club
+      </button>
       <div className="nav">
         <button className="btn ghost" type="button" disabled={h === 0} onClick={() => actions.goHole(h - 1, false)}>
           Back

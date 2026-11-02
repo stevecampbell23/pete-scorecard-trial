@@ -24,6 +24,7 @@ Then open the local URL Vite prints (usually `http://localhost:5173`).
 - Handicap is labeled as an estimate, not an official World Handicap System index.
 - Data is stored in this browser only (`peteScorecard.trial.v1`). Backup/restore will not write to the production site.
 - Course search is on-device GPS **near me** plus typeahead against OpenGolfAPI (OpenStreetMap / ODbL). Saved courses and places you have played rank first. Missing hole pars stay blank — they are never filled in as 4s. The last nearby list and opened cards stay on the phone so Play is not empty while GPS thinks.
+- Setup → **Start a group** puts Buddies and the live card on more than one phone. The yardage bag and reality check stay on this phone.
 
 ## Brand
 

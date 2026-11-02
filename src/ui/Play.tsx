@@ -6,6 +6,7 @@ import { LiveRoundView } from "./LiveRound";
 import { Yardage } from "./Yardage";
 import { FinishedRound } from "./FinishedRound";
 import { CourseSearch } from "./CourseSearch";
+import { useGroup } from "../sync/GroupSync";
 
 export function Play({ onOpenRound }: { onOpenRound: (id: string) => void }) {
   const { state } = useStore();
@@ -16,6 +17,7 @@ export function Play({ onOpenRound }: { onOpenRound: (id: string) => void }) {
 function TeeItUp({ onOpenRound }: { onOpenRound: (id: string) => void }) {
   const { state } = useStore();
   const actions = useActions();
+  const group = useGroup();
   const [sel, setSel] = useState<Set<string>>(() => new Set([state.me]));
   const [courseId, setCourseId] = useState(state.lastCourseId && state.courses.some((c) => c.id === state.lastCourseId) ? state.lastCourseId : state.courses[0]?.id ?? "");
   const [date, setDate] = useState(todayISO());
@@ -49,6 +51,12 @@ function TeeItUp({ onOpenRound }: { onOpenRound: (id: string) => void }) {
         <div className="eyebrow">New round</div>
         <h1>Tee it up</h1>
       </div>
+      {state.room ? (
+        <div className="banner">
+          Group {state.room.code}
+          {group.peers ? ` · ${group.peers} other phone${group.peers === 1 ? "" : "s"}` : " · waiting"}. Scores move together. Bag stays here.
+        </div>
+      ) : null}
       <div className="block">
         <CourseSearch selectedId={courseId} onSelect={setCourseId} />
         {courseId ? (

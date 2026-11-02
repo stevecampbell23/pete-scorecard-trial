@@ -40,6 +40,7 @@ export type LiveRound = {
   /** null means not recorded yet. Par is only written when the user taps Next or +/−. */
   scores: Record<string, Array<number | null>>;
   created: number;
+  updated?: number;
 };
 
 export type SavedRound = {
@@ -64,10 +65,12 @@ export type AppState = {
   me: string;
   lastCourseId?: string;
   clubs: Club[];
+  clubShots?: Record<string, number[]>;
   lastFix?: { lat: number; lng: number; at: number; accuracyM?: number };
+  room?: { code: string; role: "host" | "guest" } | null;
 };
 
-export type Tab = "play" | "stats" | "rounds" | "setup";
+export type Tab = "play" | "bag" | "stats" | "rounds" | "setup";
 
 export type StakeMode = "points" | "dollars";
 

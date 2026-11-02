@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { backupPayload, loadState, saveState } from "./storage";
 import type { AppState, Club, Course, LiveRound, Player, SavedRound } from "./types";
+import { mergeShared, type SharedSlice } from "./engine/merge";
 import { uid, todayISO } from "./engine/id";
 import { bumpScore, commitIfEmpty, holePar, toSavedScores } from "./engine/scoring";
 
@@ -12,6 +13,11 @@ type Store = {
 
 let snapshot: { state: AppState; storageOk: boolean } = loadState();
 const listeners = new Set<() => void>();
+let remoteApply = false;
+
+export function isRemoteApply() {
+  return remoteApply;
+}
 
 function emit() {
   listeners.forEach((l) => l());
@@ -115,6 +121,7 @@ export function useActions() {
         hole: 0,
         scores: Object.fromEntries(opts.playerIds.map((id) => [id, Array(course.par.length).fill(null)])),
         created: Date.now(),
+        updated: Date.now(),
       };
       set({ live, lastCourseId: opts.courseId });
     },
@@ -136,7 +143,7 @@ export function useActions() {
         const par = holePar(course?.par[s.live.hole]);
         const nextScores = { ...s.live.scores, [pid]: [...s.live.scores[pid]] };
         nextScores[pid][s.live.hole] = bumpScore(nextScores[pid][s.live.hole], par, delta);
-        return { ...s, live: { ...s.live, scores: nextScores } };
+        return { ...s, live: { ...s.live, scores: nextScores, updated: Date.now() } };
       });
     },
     goHole(index: number, commitCurrent: boolean) {
@@ -153,7 +160,7 @@ export function useActions() {
             scores[pid] = row;
           }
         }
-        return { ...s, live: { ...s.live, scores, hole: index } };
+        return { ...s, live: { ...s.live, scores, hole: index, updated: Date.now() } };
       });
     },
     finishLive() {
@@ -186,6 +193,20 @@ export function useActions() {
     setClubs(clubs: Club[]) {
       set({ clubs });
     },
+    setClubShots(clubId: string, shots: number[]) {
+      set((s) => ({ ...s, clubShots: { ...(s.clubShots ?? {}), [clubId]: shots } }));
+    },
+    setRoom(room: AppState["room"]) {
+      set({ room });
+    },
+    applyShared(slice: SharedSlice) {
+      remoteApply = true;
+      try {
+        set((s) => mergeShared(s, slice));
+      } finally {
+        remoteApply = false;
+      }
+    },
     restore(data: Partial<AppState>) {
       set((s) => ({
         ...s,
@@ -194,6 +215,7 @@ export function useActions() {
         rounds: data.rounds ?? s.rounds,
         me: data.me ?? s.me,
         clubs: data.clubs ?? s.clubs,
+        clubShots: data.clubShots ?? s.clubShots,
         lastCourseId: data.lastCourseId ?? s.lastCourseId,
         live: null,
       }));

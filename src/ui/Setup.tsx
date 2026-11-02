@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useActions, useStore } from "../store";
 import { sum } from "../engine/id";
 import { CourseSearch } from "./CourseSearch";
+import { GroupBlock } from "./GroupBlock";
 
 export function Setup() {
   const { state, storageOk } = useStore();
@@ -55,8 +56,9 @@ export function Setup() {
           </div>
         ))}
         <AddPlayer />
-        <span className="note">“You” is whose stats show first. We say Your 2026, never You’s.</span>
+        <span className="note">“You” is whose stats show first. We say Your 2026, never You’s. Rename yourself before you join a group so the other phones don’t all say You.</span>
       </div>
+      <GroupBlock />
       <div className="block">
         <h3>Courses</h3>
         <CourseSearch selectedId={state.lastCourseId} onSelect={() => {}} />
